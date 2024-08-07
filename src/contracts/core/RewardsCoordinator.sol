@@ -508,7 +508,7 @@ contract RewardsCoordinator is
 
     /// @notice the commission for a specific operator for a specific avs
     /// NOTE: Currently unused and simply returns the globalOperatorCommissionBips value but will be used in future release
-    function operatorCommissionBips(address operator, address avs) external view returns (uint16) {
+    function operatorCommissionBips(address /** operator **/, address /** avs **/) external view returns (uint16) {
         return globalOperatorCommissionBips;
     }
 
@@ -534,6 +534,8 @@ contract RewardsCoordinator is
                 return root;
             }
         }
+        // Silence compiler warning.
+        return DistributionRoot(bytes32(0), 0, 0, false);
     }
 
     /// @notice loop through distribution roots from reverse and return hash

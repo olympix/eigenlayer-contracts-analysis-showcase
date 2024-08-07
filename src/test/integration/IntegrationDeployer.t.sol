@@ -696,44 +696,43 @@ abstract contract IntegrationDeployer is ExistingDeploymentParser {
             beaconChain = new BeaconChainMock(timeMachine, beaconChainOracle, eigenPodManager);
         } else if (forkType == HOLESKY) {
             revert("_deployOrFetchContracts - holesky tests currently broken sorry");
-            // cheats.selectFork(holeskyForkId);
-            string memory deploymentInfoPath = "script/configs/holesky/Holesky_current_deployment.config.json";
-            _parseDeployedContracts(deploymentInfoPath);
+            // // cheats.selectFork(holeskyForkId);
+            // string memory deploymentInfoPath = "script/configs/holesky/Holesky_current_deployment.config.json";
+            // _parseDeployedContracts(deploymentInfoPath);
 
-            // Add deployed strategies to lstStrats and allStrats
-            for (uint i; i < deployedStrategyArray.length; i++) {
-                IStrategy strategy = IStrategy(deployedStrategyArray[i]);
+            // // Add deployed strategies to lstStrats and allStrats
+            // for (uint i; i < deployedStrategyArray.length; i++) {
+            //     IStrategy strategy = IStrategy(deployedStrategyArray[i]);
 
-                if (tokensNotTested[address(strategy.underlyingToken())]) {
-                    continue;
-                }
+            //     if (tokensNotTested[address(strategy.underlyingToken())]) {
+            //         continue;
+            //     }
 
-                // Add to lstStrats and allStrats
-                lstStrats.push(strategy);
-                allStrats.push(strategy);
-                allTokens.push(strategy.underlyingToken());
-            }
+            //     // Add to lstStrats and allStrats
+            //     lstStrats.push(strategy);
+            //     allStrats.push(strategy);
+            //     allTokens.push(strategy.underlyingToken());
+            // }
 
-            // Update deposit contract to be a mock
-            ethPOSDeposit = new ETHPOSDepositMock();
-            eigenPodImplementation = new EigenPod(
-                ethPOSDeposit,
-                eigenPodImplementation.delayedWithdrawalRouter(),
-                eigenPodImplementation.eigenPodManager(),
-                eigenPodImplementation.MAX_RESTAKED_BALANCE_GWEI_PER_VALIDATOR(),
-                0
-            );
-            // Create time machine and set block timestamp forward so we can create EigenPod proofs in the past
-            timeMachine = new TimeMachine();
-            beaconChainOracle = new BeaconChainOracleMock();
-            // Create mock beacon chain / proof gen interface
-            beaconChain = new BeaconChainMock(timeMachine, beaconChainOracle, eigenPodManager);
+            // // Update deposit contract to be a mock
+            // ethPOSDeposit = new ETHPOSDepositMock();
+            // eigenPodImplementation = new EigenPod(
+            //     ethPOSDeposit,
+            //     eigenPodImplementation.delayedWithdrawalRouter(),
+            //     eigenPodImplementation.eigenPodManager(),
+            //     eigenPodImplementation.MAX_RESTAKED_BALANCE_GWEI_PER_VALIDATOR(),
+            //     0
+            // );
+            // // Create time machine and set block timestamp forward so we can create EigenPod proofs in the past
+            // timeMachine = new TimeMachine();
+            // beaconChainOracle = new BeaconChainOracleMock();
+            // // Create mock beacon chain / proof gen interface
+            // beaconChain = new BeaconChainMock(timeMachine, beaconChainOracle, eigenPodManager);
 
-            cheats.startPrank(executorMultisig);
-            eigenPodBeacon.upgradeTo(address(eigenPodImplementation));
-            eigenPodManager.updateBeaconChainOracle(beaconChainOracle);
-            cheats.stopPrank();
-
+            // cheats.startPrank(executorMultisig);
+            // eigenPodBeacon.upgradeTo(address(eigenPodImplementation));
+            // eigenPodManager.updateBeaconChainOracle(beaconChainOracle);
+            // cheats.stopPrank();
         } else {
             revert("_deployOrFetchContracts: unimplemented forkType");
         }

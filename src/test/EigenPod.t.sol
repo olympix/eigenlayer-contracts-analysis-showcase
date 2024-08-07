@@ -416,7 +416,7 @@ contract EigenPodTests is ProofParsing, EigenPodPausingConstants {
         cheats.stopPrank();
     }
 
-    function _timestampToEpoch(uint64 timestamp) internal view returns (uint64) {
+    function _timestampToEpoch(uint64 timestamp) internal pure returns (uint64) {
         require(timestamp >= GOERLI_GENESIS_TIME, "Test._timestampToEpoch: timestamp is before genesis");
         return (timestamp - GOERLI_GENESIS_TIME) / BeaconChainProofs.SECONDS_PER_EPOCH;
     }
