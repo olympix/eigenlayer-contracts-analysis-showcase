@@ -26,6 +26,7 @@ contract preprod_ddf5gh is DeploymentUtils {
     }
 
     function upgrade() external {
+        sys.as()
         cfg.upgradeImpl(EIGENPOD);
     }
 }
