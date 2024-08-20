@@ -281,6 +281,8 @@ contract AVSDirectory is
             _verifyOperatorSignature(operator, allocations, operatorSignature);
         }
 
+        require(delegation.isOperator(operator), "AVSDirectory.modifyAllocations: operator is not registered");
+
         // completable timestamp for deallocations
         uint32 completableTimestamp = uint32(block.timestamp) + DEALLOCATION_DELAY;
         // effect timestamp for allocations to take effect. This is configurable by operators
