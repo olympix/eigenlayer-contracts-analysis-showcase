@@ -820,7 +820,7 @@ contract AVSDirectoryUnitTests_deregisterOperatorFromOperatorSets is AVSDirector
         avsDirectory.deregisterOperatorFromOperatorSets(operator, oids);
 
         // out of bounds array access
-        vm.expectRevert();
+        cheats.expectRevert();
         avsDirectory.operatorSetsMemberOf(operator, 0);
 
         assertEq(avsDirectory.inTotalOperatorSets(operator), 0);
@@ -917,22 +917,26 @@ contract AVSDirectoryUnitTests_becomeOperatorSetAVS is AVSDirectoryUnitTests {
 }
 
 contract AVSDirectoryUnitTests_modifyAllocations is AVSDirectoryUnitTests {
-    // function test_sanity_correctInitialAllocatableMagnitude(address operator) public {
-    //     assertEq(avsDirectory.getAllocatableMagnitude(operator), avsDirectory.INITIAL_TOTAL_MAGNITUDE());
-    // }
+    function test_sanity_correctInitialAllocatableMagnitude() public {
+        address operator = address(0xCAFE);
+        _registerOperatorWithBaseDetails(operator);
+        assertEq(avsDirectory.getAllocatableMagnitude(operator, IStrategy(address(this)), 0), avsDirectory.INITIAL_TOTAL_MAGNITUDE());
+    }
     
     function test_revert_modifyAllocations_OperatorNotRegistered() public {
-        vm.expectRevert("AVSDirectory.modifyAllocatoins: operator not registered to EigenLayer yet");
+        address operator = address(0xCAFE);
+        cheats.prank(operator);
+        cheats.expectRevert("AVSDirectory.modifyAllocations: operator not registered to EigenLayer yet");
         IAVSDirectory.MagnitudeAllocation[] memory allocations = new IAVSDirectory.MagnitudeAllocation[](1);
         allocations[0] = IAVSDirectory.MagnitudeAllocation(IStrategy(address(0)), 0, new IAVSDirectory.OperatorSet[](0), new uint64[](1));
-        avsDirectory.modifyAllocations(address(0), allocations, ISignatureUtils.SignatureWithSaltAndExpiry(new bytes(65), bytes32(0), block.timestamp));
+        avsDirectory.modifyAllocations(operator, allocations, ISignatureUtils.SignatureWithSaltAndExpiry(new bytes(65), bytes32(0), block.timestamp));
     }
 
     function test_revert_modifyAllocations_InvalidSignatureCallerNotOperator() public {
         address operator = address(0xCAFE);
         _registerOperatorWithBaseDetails(operator);
         // This error tells us that we attempted to validate the signature since `msg.sender != operator`.
-        vm.expectRevert("ECDSA: invalid signature 'v' value");
+        cheats.expectRevert("ECDSA: invalid signature 'v' value");
         IAVSDirectory.MagnitudeAllocation[] memory allocations = new IAVSDirectory.MagnitudeAllocation[](1);
         allocations[0] = IAVSDirectory.MagnitudeAllocation(IStrategy(address(0)), 0, new IAVSDirectory.OperatorSet[](0), new uint64[](1));
         avsDirectory.modifyAllocations(operator, allocations, ISignatureUtils.SignatureWithSaltAndExpiry(new bytes(65), bytes32(0), block.timestamp));
