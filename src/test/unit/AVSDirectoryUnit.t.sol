@@ -905,9 +905,7 @@ contract AVSDirectoryUnitTests_becomeOperatorSetAVS is AVSDirectoryUnitTests {
     function test_becomeOperatorSetAVS() public {
         cheats.expectEmit(true, true, true, true, address(avsDirectory));
         emit AVSMigratedToOperatorSets(address(this));
-
         avsDirectory.becomeOperatorSetAVS();
-
         assertTrue(avsDirectory.isOperatorSetAVS(address(this)));
     }
 
@@ -915,6 +913,29 @@ contract AVSDirectoryUnitTests_becomeOperatorSetAVS is AVSDirectoryUnitTests {
         avsDirectory.becomeOperatorSetAVS();
         cheats.expectRevert("AVSDirectory.becomeOperatorSetAVS: already an operator set AVS");
         avsDirectory.becomeOperatorSetAVS();
+    }
+}
+
+contract AVSDirectoryUnitTests_modifyAllocations is AVSDirectoryUnitTests {
+    // function test_sanity_correctInitialAllocatableMagnitude(address operator) public {
+    //     assertEq(avsDirectory.getAllocatableMagnitude(operator), avsDirectory.INITIAL_TOTAL_MAGNITUDE());
+    // }
+    
+    function test_revert_modifyAllocations_OperatorNotRegistered() public {
+        vm.expectRevert("AVSDirectory.modifyAllocatoins: operator not registered to EigenLayer yet");
+        IAVSDirectory.MagnitudeAllocation[] memory allocations = new IAVSDirectory.MagnitudeAllocation[](1);
+        allocations[0] = IAVSDirectory.MagnitudeAllocation(IStrategy(address(0)), 0, new IAVSDirectory.OperatorSet[](0), new uint64[](1));
+        avsDirectory.modifyAllocations(address(0), allocations, ISignatureUtils.SignatureWithSaltAndExpiry(new bytes(65), bytes32(0), block.timestamp));
+    }
+
+    function test_revert_modifyAllocations_InvalidSignatureCallerNotOperator() public {
+        address operator = address(0xCAFE);
+        _registerOperatorWithBaseDetails(operator);
+        // This error tells us that we attempted to validate the signature since `msg.sender != operator`.
+        vm.expectRevert("ECDSA: invalid signature 'v' value");
+        IAVSDirectory.MagnitudeAllocation[] memory allocations = new IAVSDirectory.MagnitudeAllocation[](1);
+        allocations[0] = IAVSDirectory.MagnitudeAllocation(IStrategy(address(0)), 0, new IAVSDirectory.OperatorSet[](0), new uint64[](1));
+        avsDirectory.modifyAllocations(operator, allocations, ISignatureUtils.SignatureWithSaltAndExpiry(new bytes(65), bytes32(0), block.timestamp));
     }
 }
 
