@@ -281,7 +281,10 @@ contract AVSDirectory is
             _verifyOperatorSignature(operator, allocations, operatorSignature);
         }
 
-        require(delegation.isOperator(operator), "AVSDirectory.modifyAllocations: operator is not registered");
+        require(
+            delegation.isOperator(operator),
+            "AVSDirectory.modifyAllocations: operator not registered to EigenLayer yet"
+        );
 
         // completable timestamp for deallocations
         uint32 completableTimestamp = uint32(block.timestamp) + DEALLOCATION_DELAY;
