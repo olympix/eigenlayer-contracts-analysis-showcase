@@ -30,3 +30,90 @@ make deploy preprod
 * Deploys the entire system to `preprod` using the `DeployAll` script
 * Generates an output file that gives the config for this new system. This is generated to a `.gitignored` directory, but if moved into the `config` folder, it can become a named, usable environment
 
+---
+
+## Preprod Release Workflow
+
+#### Deploying New Contracts
+
+```
+$ make release pepe
+
+Generated release script: `./scripts/v0_4_5_pepe.s.sol`
+```
+
+<Edit script (`deploy`)>
+
+```
+$ make deploy pepe --preprod --dry-run
+
+Launching anvil using $RPC... done
+Running `v0_4_5_pepe.s.sol:deploy`... done
+
+Results ("preprod.json"):
+
+{
+    "eigenPod": {
+        "pendingImpl": "0xDEADBEEF"
+    },
+    "eigenPodManager": {
+        "pendingImpl": "0xABADDEED"
+    }
+}
+```
+
+<Confirm results look correct, then run again>
+
+```
+$ make deploy pepe --preprod
+
+Launching anvil using $RPC... done
+Running `v0_4_5_pepe.s.sol:deploy`... done
+
+Results ("preprod.json"):
+
+{
+    "eigenPod": {
+        "pendingImpl": "0xDEADBEEF"
+    },
+    "eigenPodManager": {
+        "pendingImpl": "0xABADDEED"
+    }
+}
+
+Is this correct? Press (y/n) to update config: y
+Updating `config/preprod.json`... done
+```
+
+Contracts should be successfully deployed, and config updated.
+
+#### Perform Upgrade
+
+<Edit existing script (`execute`)>
+
+```
+$ make execute pepe --preprod --dry-run
+
+Launching anvil using $RPC... done
+Running `v0_4_5_pepe.s.sol:execute`... done
+
+Actions:
+
+[
+    "executorMultisig": [
+        "eigenPodBeacon.proxy.upgradeTo(pendingImpl)",
+        "proxyAdmin.upgrade(eigenPodManager.proxy, pendingImpl)"
+    ]
+]
+
+Results ("preprod.json"):
+
+{
+    "eigenPod": {
+        "impl": "0xDEADBEEF"
+    },
+    "eigenPodManager": {
+        "impl": "0xABADDEED"
+    }
+}
+```
