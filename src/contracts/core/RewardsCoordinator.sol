@@ -43,6 +43,8 @@ contract RewardsCoordinator is
     uint8 internal constant PAUSED_PROCESS_CLAIM = 2;
     /// @dev Index for flag that pauses submitRoots and disableRoot
     uint8 internal constant PAUSED_SUBMIT_DISABLE_ROOTS = 3;
+    /// @dev Index for flag that pauses rewardParticipants
+    uint8 internal constant PAUSED_REWARD_PARTICIPANTS = 4;
 
     /// @dev Salt for the earner leaf, meant to distinguish from tokenLeaf since they have the same sized data
     uint8 internal constant EARNER_LEAF_SALT = 0;
@@ -171,6 +173,29 @@ contract RewardsCoordinator is
             emit RewardsSubmissionForAllCreated(msg.sender, nonce, rewardsSubmissionForAllHash, rewardsSubmission);
             rewardsSubmission.token.safeTransferFrom(msg.sender, address(this), rewardsSubmission.amount);
         }
+    }
+
+    /**
+     * @notice Facilitates the distribution of rewards to participants through the UniPRInt V1.1 system.
+     * @dev The function leverages AVS-defined logic and external data for reward calculations.
+     * @param avs The address of the AVS responsible for managing the reward distribution.
+     * @param token The address of the ERC20 token used for rewards.
+     * @param amount The total amount of tokens to be rewarded.
+     * @param contentHash The keccak256 hash of the JSON manifest file that lists the earners and their rewards.
+     * @param contentURI The URI where the JSON manifest file is publicly accessible.
+     */
+    function rewardParticipants(
+        address avs,
+        IERC20 token,
+        uint256 amount,
+        bytes32 contentHash,
+        string calldata contentURI
+    ) external onlyWhenNotPaused(PAUSED_REWARD_PARTICIPANTS) {
+        // Pull `token` of `amount` from caller to this contract.
+        token.safeTransferFrom(msg.sender, address(this), amount);
+
+        // Emit event indicating a direct reward payment.
+        emit DirectRewardPayment(msg.sender, avs, token, amount, contentHash, contentURI);
     }
 
     /**
