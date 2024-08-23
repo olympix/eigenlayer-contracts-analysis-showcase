@@ -8,6 +8,7 @@
 ## Unit testing
 1. In this directory, you can see two test files - `OpixEigen.t.sol` and `OpixDelegationUnit.t.sol`. In both of these files, all the functions that start with `test` were created completely by the AI with no human intervention.
 2. For both of these test files, you also have a corresponding test report image in this directory. These contain metrics like the time it took to generate these tests, the amount of credits it took, the percentage increase in branch/line coverage etc.
+3. To run these unit tests, run the script `test.sh` in the current folder. 
 
 ## Mutation testing
 For an overview, look at the attached `mutation-test-report.png` which provides some stats regarding number of mutants, mutant survival rate etc. 

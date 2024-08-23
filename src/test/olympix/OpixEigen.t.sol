@@ -1,232 +1,232 @@
-// // SPDX-License-Identifier: UNLICENSED
-// pragma solidity ^0.8.12;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.12;
 
-// import "forge-std/Test.sol";
+import "forge-std/Test.sol";
 
-// import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-// import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-// import "../harnesses/EigenHarness.sol";
+import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import "../harnesses/EigenHarness.sol";
 
-// import "../../contracts/token/BackingEigen.sol";
-// import "../../contracts/token/Eigen.sol";
+import "../../contracts/token/BackingEigen.sol";
+import "../../contracts/token/Eigen.sol";
 
-// abstract contract OlympixUnitTest is Test {
-//     constructor(string memory name_) {}
-// }
-
-
-// contract OpixEigenTest is OlympixUnitTest("Eigen") {
-//     mapping(address => bool) fuzzedOutAddresses;
-
-//     address minter1 = 0xbb00DDa2832850a43840A3A86515E3Fe226865F2;
-//     address minter2 = 0x87787389BB2Eb2EC8Fe4aA6a2e33D671d925A60f;
-
-//     ProxyAdmin proxyAdmin;
-
-//     EigenHarness eigenImpl;
-//     Eigen eigen;
-
-//     BackingEigen bEIGENImpl;
-//     BackingEigen bEIGEN;
-
-//     uint256 totalSupply = 1.67e9 ether;
-
-//     // EVENTS FROM EIGEN.sol
-//     /// @notice event emitted when the allowedFrom status of an address is set
-//     event SetAllowedFrom(address indexed from, bool isAllowedFrom);
-//     /// @notice event emitted when the allowedTo status of an address is set
-//     event SetAllowedTo(address indexed to, bool isAllowedTo);
-//     /// @notice event emitted when a minter mints
-//     event Mint(address indexed minter, uint256 amount);
-//     /// @notice event emitted when the transfer restrictions are disabled
-//     event TransferRestrictionsDisabled();
-
-//     modifier filterAddress(address fuzzedAddress) {
-//         vm.assume(!fuzzedOutAddresses[fuzzedAddress]);
-//         _;
-//     }
-
-//     function setUp() public {
-//         vm.startPrank(minter1);
-//         proxyAdmin = new ProxyAdmin();
-
-//         // deploy proxies
-//         eigen = Eigen(address(new TransparentUpgradeableProxy(address(proxyAdmin), address(proxyAdmin), "")));
-//         bEIGEN = BackingEigen(address(new TransparentUpgradeableProxy(address(proxyAdmin), address(proxyAdmin), "")));
-
-//         // deploy impls
-//         eigenImpl = new EigenHarness(IERC20(address(bEIGEN)));
-//         bEIGENImpl = new BackingEigen(IERC20(address(eigen)));
-
-//         // upgrade proxies
-//         proxyAdmin.upgrade(TransparentUpgradeableProxy(payable(address(eigen))), address(eigenImpl));
-//         proxyAdmin.upgrade(TransparentUpgradeableProxy(payable(address(bEIGEN))), address(bEIGENImpl));
-
-//         vm.stopPrank();
-
-//         fuzzedOutAddresses[minter1] = true;
-//         fuzzedOutAddresses[minter2] = true;
-//         fuzzedOutAddresses[address(proxyAdmin)] = true;
-//         fuzzedOutAddresses[address(eigen)] = true;
-//         fuzzedOutAddresses[address(bEIGEN)] = true;
-//         fuzzedOutAddresses[address(0)] = true;
-//     }
+abstract contract OlympixUnitTest is Test {
+    constructor(string memory name_) {}
+}
 
 
-//     function test_initialize_FailWhenMintersAndMintingAllowancesHaveDifferentLengths() public {
-//         address[] memory minters = new address[](1);
-//         minters[0] = minter1;
-    
-//         uint256[] memory mintingAllowances = new uint256[](2);
-//         mintingAllowances[0] = 1 ether;
-//         mintingAllowances[1] = 2 ether;
-    
-//         uint256[] memory mintAllowedAfters = new uint256[](1);
-//         mintAllowedAfters[0] = 0;
-    
-//         vm.expectRevert("Eigen.initialize: minters and mintingAllowances must be the same length");
-//         eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
-//     }
+contract OpixEigenTest is OlympixUnitTest("Eigen") {
+    mapping(address => bool) fuzzedOutAddresses;
 
-//     function test_initialize_FailWhenMintersAndMintAllowedAftersHaveDifferentLengths() public {
-//         address[] memory minters = new address[](1);
-//         minters[0] = minter1;
-    
-//         uint256[] memory mintingAllowances = new uint256[](1);
-//         mintingAllowances[0] = 1 ether;
-    
-//         uint256[] memory mintAllowedAfters = new uint256[](2);
-//         mintAllowedAfters[0] = 0;
-//         mintAllowedAfters[1] = 1;
-    
-//         vm.expectRevert("Eigen.initialize: minters and mintAllowedAfters must be the same length");
-//         eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
-//     }
+    address minter1 = 0xbb00DDa2832850a43840A3A86515E3Fe226865F2;
+    address minter2 = 0x87787389BB2Eb2EC8Fe4aA6a2e33D671d925A60f;
 
-//     function test_disableTransferRestrictions_SuccessfulDisable() public {
-//         address[] memory minters = new address[](1);
-//         minters[0] = minter1;
-    
-//         uint256[] memory mintingAllowances = new uint256[](1);
-//         mintingAllowances[0] = 1 ether;
-    
-//         uint256[] memory mintAllowedAfters = new uint256[](1);
-//         mintAllowedAfters[0] = 0;
-    
-//         eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
-    
-//         vm.startPrank(minter1);
-    
-//         eigen.disableTransferRestrictions();
-    
-//         vm.expectRevert("Eigen.disableTransferRestrictions: transfer restrictions are already disabled");
-//         eigen.disableTransferRestrictions();
-    
-//         vm.stopPrank();
-//     }
+    ProxyAdmin proxyAdmin;
 
-//     function test_mint_FailWhenSenderHasNoMintingAllowance() public {
-//         vm.startPrank(minter2);
-    
-//         vm.expectRevert("Eigen.mint: msg.sender has no minting allowance");
-//         eigen.mint();
-    
-//         vm.stopPrank();
-//     }
+    EigenHarness eigenImpl;
+    Eigen eigen;
 
-//     function test_mint_SuccessfulMint() public {
-//         address[] memory minters = new address[](1);
-//         minters[0] = minter1;
-    
-//         uint256[] memory mintingAllowances = new uint256[](1);
-//         mintingAllowances[0] = 1 ether;
-    
-//         uint256[] memory mintAllowedAfters = new uint256[](1);
-//         mintAllowedAfters[0] = 0;
-    
-//         eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
-    
-//         vm.startPrank(minter1);
-    
-//         eigen.mint();
-    
-//         vm.stopPrank();
-    
-//         assertEq(eigen.balanceOf(minter1), 1 ether);
-//         assertEq(eigen.mintingAllowance(minter1), 0);
-//     }
+    BackingEigen bEIGENImpl;
+    BackingEigen bEIGEN;
 
-//     function test_mint_FailWhenSenderIsNotAllowedToMintYet() public {
-//         address[] memory minters = new address[](1);
-//         minters[0] = minter1;
-    
-//         uint256[] memory mintingAllowances = new uint256[](1);
-//         mintingAllowances[0] = 1 ether;
-    
-//         uint256[] memory mintAllowedAfters = new uint256[](1);
-//         mintAllowedAfters[0] = block.timestamp + 1;
-    
-//         eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
-    
-//         vm.startPrank(minter1);
-    
-//         vm.expectRevert("Eigen.mint: msg.sender is not allowed to mint yet");
-//         eigen.mint();
-    
-//         vm.stopPrank();
-//     }
+    uint256 totalSupply = 1.67e9 ether;
 
-//     function test_multisend_FailWhenReceiversAndAmountsHaveDifferentLengths() public {
-//         vm.startPrank(minter1);
-    
-//         address[] memory receivers = new address[](1);
-//         receivers[0] = minter2;
-    
-//         uint256[] memory amounts = new uint256[](2);
-//         amounts[0] = 1 ether;
-//         amounts[1] = 2 ether;
-    
-//         vm.expectRevert("Eigen.multisend: receivers and amounts must be the same length");
-//         eigen.multisend(receivers, amounts);
-    
-//         vm.stopPrank();
-//     }
+    // EVENTS FROM EIGEN.sol
+    /// @notice event emitted when the allowedFrom status of an address is set
+    event SetAllowedFrom(address indexed from, bool isAllowedFrom);
+    /// @notice event emitted when the allowedTo status of an address is set
+    event SetAllowedTo(address indexed to, bool isAllowedTo);
+    /// @notice event emitted when a minter mints
+    event Mint(address indexed minter, uint256 amount);
+    /// @notice event emitted when the transfer restrictions are disabled
+    event TransferRestrictionsDisabled();
 
-//     function test_multisend_SuccessfulMultisend() public {
-//         vm.startPrank(minter1);
-    
-//         address[] memory minters = new address[](2);
-//         minters[0] = minter1;
-//         minters[1] = minter2;
-    
-//         uint256[] memory mintingAllowances = new uint256[](2);
-//         mintingAllowances[0] = 1 ether;
-//         mintingAllowances[1] = 1 ether;
-    
-//         uint256[] memory mintAllowedAfters = new uint256[](2);
-//         mintAllowedAfters[0] = 0;
-//         mintAllowedAfters[1] = 0;
-    
-//         eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
-    
-//         eigen.mint();
-    
-//         address[] memory receivers = new address[](1);
-//         receivers[0] = minter2;
-    
-//         uint256[] memory amounts = new uint256[](1);
-//         amounts[0] = 1 ether;
-    
-//         eigen.multisend(receivers, amounts);
-    
-//         vm.stopPrank();
-    
-//         assertEq(eigen.balanceOf(minter1), 0);
-//         assertEq(eigen.balanceOf(minter2), 1 ether);
-//     }
+    modifier filterAddress(address fuzzedAddress) {
+        vm.assume(!fuzzedOutAddresses[fuzzedAddress]);
+        _;
+    }
 
-//     function test_CLOCK_MODE_SuccessfulReturnModeTimestamp() public {
-//         string memory clockMode = eigen.CLOCK_MODE();
-//         assertEq(clockMode, "mode=timestamp");
-//     }
-// }
+    function setUp() public {
+        vm.startPrank(minter1);
+        proxyAdmin = new ProxyAdmin();
+
+        // deploy proxies
+        eigen = Eigen(address(new TransparentUpgradeableProxy(address(proxyAdmin), address(proxyAdmin), "")));
+        bEIGEN = BackingEigen(address(new TransparentUpgradeableProxy(address(proxyAdmin), address(proxyAdmin), "")));
+
+        // deploy impls
+        eigenImpl = new EigenHarness(IERC20(address(bEIGEN)));
+        bEIGENImpl = new BackingEigen(IERC20(address(eigen)));
+
+        // upgrade proxies
+        proxyAdmin.upgrade(TransparentUpgradeableProxy(payable(address(eigen))), address(eigenImpl));
+        proxyAdmin.upgrade(TransparentUpgradeableProxy(payable(address(bEIGEN))), address(bEIGENImpl));
+
+        vm.stopPrank();
+
+        fuzzedOutAddresses[minter1] = true;
+        fuzzedOutAddresses[minter2] = true;
+        fuzzedOutAddresses[address(proxyAdmin)] = true;
+        fuzzedOutAddresses[address(eigen)] = true;
+        fuzzedOutAddresses[address(bEIGEN)] = true;
+        fuzzedOutAddresses[address(0)] = true;
+    }
+
+
+    function test_initialize_FailWhenMintersAndMintingAllowancesHaveDifferentLengths() public {
+        address[] memory minters = new address[](1);
+        minters[0] = minter1;
+    
+        uint256[] memory mintingAllowances = new uint256[](2);
+        mintingAllowances[0] = 1 ether;
+        mintingAllowances[1] = 2 ether;
+    
+        uint256[] memory mintAllowedAfters = new uint256[](1);
+        mintAllowedAfters[0] = 0;
+    
+        vm.expectRevert("Eigen.initialize: minters and mintingAllowances must be the same length");
+        eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
+    }
+
+    function test_initialize_FailWhenMintersAndMintAllowedAftersHaveDifferentLengths() public {
+        address[] memory minters = new address[](1);
+        minters[0] = minter1;
+    
+        uint256[] memory mintingAllowances = new uint256[](1);
+        mintingAllowances[0] = 1 ether;
+    
+        uint256[] memory mintAllowedAfters = new uint256[](2);
+        mintAllowedAfters[0] = 0;
+        mintAllowedAfters[1] = 1;
+    
+        vm.expectRevert("Eigen.initialize: minters and mintAllowedAfters must be the same length");
+        eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
+    }
+
+    function test_disableTransferRestrictions_SuccessfulDisable() public {
+        address[] memory minters = new address[](1);
+        minters[0] = minter1;
+    
+        uint256[] memory mintingAllowances = new uint256[](1);
+        mintingAllowances[0] = 1 ether;
+    
+        uint256[] memory mintAllowedAfters = new uint256[](1);
+        mintAllowedAfters[0] = 0;
+    
+        eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
+    
+        vm.startPrank(minter1);
+    
+        eigen.disableTransferRestrictions();
+    
+        vm.expectRevert("Eigen.disableTransferRestrictions: transfer restrictions are already disabled");
+        eigen.disableTransferRestrictions();
+    
+        vm.stopPrank();
+    }
+
+    function test_mint_FailWhenSenderHasNoMintingAllowance() public {
+        vm.startPrank(minter2);
+    
+        vm.expectRevert("Eigen.mint: msg.sender has no minting allowance");
+        eigen.mint();
+    
+        vm.stopPrank();
+    }
+
+    function test_mint_SuccessfulMint() public {
+        address[] memory minters = new address[](1);
+        minters[0] = minter1;
+    
+        uint256[] memory mintingAllowances = new uint256[](1);
+        mintingAllowances[0] = 1 ether;
+    
+        uint256[] memory mintAllowedAfters = new uint256[](1);
+        mintAllowedAfters[0] = 0;
+    
+        eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
+    
+        vm.startPrank(minter1);
+    
+        eigen.mint();
+    
+        vm.stopPrank();
+    
+        assertEq(eigen.balanceOf(minter1), 1 ether);
+        assertEq(eigen.mintingAllowance(minter1), 0);
+    }
+
+    function test_mint_FailWhenSenderIsNotAllowedToMintYet() public {
+        address[] memory minters = new address[](1);
+        minters[0] = minter1;
+    
+        uint256[] memory mintingAllowances = new uint256[](1);
+        mintingAllowances[0] = 1 ether;
+    
+        uint256[] memory mintAllowedAfters = new uint256[](1);
+        mintAllowedAfters[0] = block.timestamp + 1;
+    
+        eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
+    
+        vm.startPrank(minter1);
+    
+        vm.expectRevert("Eigen.mint: msg.sender is not allowed to mint yet");
+        eigen.mint();
+    
+        vm.stopPrank();
+    }
+
+    function test_multisend_FailWhenReceiversAndAmountsHaveDifferentLengths() public {
+        vm.startPrank(minter1);
+    
+        address[] memory receivers = new address[](1);
+        receivers[0] = minter2;
+    
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 1 ether;
+        amounts[1] = 2 ether;
+    
+        vm.expectRevert("Eigen.multisend: receivers and amounts must be the same length");
+        eigen.multisend(receivers, amounts);
+    
+        vm.stopPrank();
+    }
+
+    function test_multisend_SuccessfulMultisend() public {
+        vm.startPrank(minter1);
+    
+        address[] memory minters = new address[](2);
+        minters[0] = minter1;
+        minters[1] = minter2;
+    
+        uint256[] memory mintingAllowances = new uint256[](2);
+        mintingAllowances[0] = 1 ether;
+        mintingAllowances[1] = 1 ether;
+    
+        uint256[] memory mintAllowedAfters = new uint256[](2);
+        mintAllowedAfters[0] = 0;
+        mintAllowedAfters[1] = 0;
+    
+        eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
+    
+        eigen.mint();
+    
+        address[] memory receivers = new address[](1);
+        receivers[0] = minter2;
+    
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 1 ether;
+    
+        eigen.multisend(receivers, amounts);
+    
+        vm.stopPrank();
+    
+        assertEq(eigen.balanceOf(minter1), 0);
+        assertEq(eigen.balanceOf(minter2), 1 ether);
+    }
+
+    function test_CLOCK_MODE_SuccessfulReturnModeTimestamp() public {
+        string memory clockMode = eigen.CLOCK_MODE();
+        assertEq(clockMode, "mode=timestamp");
+    }
+}
