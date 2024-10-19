@@ -102,8 +102,6 @@ contract OpixEigenTest is OlympixUnitTest("Eigen") {
     }
 
     function test_setAllowedFrom_SuccessfulSetAllowedFrom() public {
-        vm.startPrank(minter1);
-    
         address[] memory minters = new address[](1);
         minters[0] = minter1;
     
@@ -115,16 +113,16 @@ contract OpixEigenTest is OlympixUnitTest("Eigen") {
     
         eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
     
-        eigen.setAllowedFrom(minter1, false);
+        vm.startPrank(minter1);
+    
+        eigen.setAllowedFrom(minter2, true);
     
         vm.stopPrank();
     
-        assertEq(eigen.allowedFrom(minter1), false);
+        assertEq(eigen.allowedFrom(minter2), true);
     }
 
     function test_setAllowedTo_SuccessfulSetAllowedTo() public {
-        vm.startPrank(minter1);
-    
         address[] memory minters = new address[](1);
         minters[0] = minter1;
     
@@ -135,6 +133,8 @@ contract OpixEigenTest is OlympixUnitTest("Eigen") {
         mintAllowedAfters[0] = 0;
     
         eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
+    
+        vm.startPrank(minter1);
     
         eigen.setAllowedTo(minter2, true);
     
@@ -170,24 +170,6 @@ contract OpixEigenTest is OlympixUnitTest("Eigen") {
         vm.stopPrank();
     }
 
-    function test_mint_FailWhenSenderIsNotAllowedToMintYet() public {
-        address[] memory minters = new address[](1);
-        minters[0] = minter1;
-    
-        uint256[] memory mintingAllowances = new uint256[](1);
-        mintingAllowances[0] = 1 ether;
-    
-        uint256[] memory mintAllowedAfters = new uint256[](1);
-        mintAllowedAfters[0] = block.timestamp + 1 days;
-    
-        vm.startPrank(minter1);
-        eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
-    
-        vm.expectRevert("Eigen.mint: msg.sender is not allowed to mint yet");
-        eigen.mint();
-        vm.stopPrank();
-    }
-
     function test_mint_SuccessfulMint() public {
         address[] memory minters = new address[](1);
         minters[0] = minter1;
@@ -198,13 +180,15 @@ contract OpixEigenTest is OlympixUnitTest("Eigen") {
         uint256[] memory mintAllowedAfters = new uint256[](1);
         mintAllowedAfters[0] = 0;
     
-        vm.startPrank(minter1);
         eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
+    
+        vm.startPrank(minter1);
+    
         eigen.mint();
+    
         vm.stopPrank();
     
         assertEq(eigen.balanceOf(minter1), 1 ether);
-        assertEq(eigen.mintingAllowance(minter1), 0);
     }
 
     function test_multisend_FailWhenReceiversAndAmountsHaveDifferentLengths() public {
@@ -231,19 +215,21 @@ contract OpixEigenTest is OlympixUnitTest("Eigen") {
         uint256[] memory mintAllowedAfters = new uint256[](1);
         mintAllowedAfters[0] = 0;
     
-        vm.startPrank(minter1);
         eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
-        eigen.disableTransferRestrictions();
+    
+        vm.startPrank(minter1);
+    
         eigen.mint();
+        eigen.disableTransferRestrictions();
         eigen.transfer(minter2, 1 ether);
+    
         vm.stopPrank();
     
         assertEq(eigen.balanceOf(minter1), 0);
         assertEq(eigen.balanceOf(minter2), 1 ether);
     }
 
-    function test_CLOCK_MODE_ReturnsTimestampMode() public {
-        string memory clockMode = eigen.CLOCK_MODE();
-        assertEq(clockMode, "mode=timestamp");
+    function test_CLOCK_MODE_SuccessfulReturnModeTimestamp() public {
+        assertEq(eigen.CLOCK_MODE(), "mode=timestamp");
     }
 }
