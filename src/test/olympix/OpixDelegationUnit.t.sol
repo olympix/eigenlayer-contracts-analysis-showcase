@@ -823,4 +823,102 @@ contract OpixDelegationManagerUnitTests is OlympixUnitTest("DelegationManager") 
         uint256 withdrawalDelay = delegationManager.getWithdrawalDelay(strategies);
         assertEq(withdrawalDelay, delegationManager.strategyWithdrawalDelayBlocks(strategies[0]));
     }
+
+    function test_modifyOperatorDetails_SuccessfulModifyOperatorDetails() public {
+        address operator = address(this);
+        _registerOperatorWithBaseDetails(operator);
+    
+        IDelegationManager.OperatorDetails memory newOperatorDetails = IDelegationManager.OperatorDetails({
+            __deprecated_earningsReceiver: operator,
+            delegationApprover: address(0),
+            stakerOptOutWindowBlocks: 1
+        });
+    
+        delegationManager.modifyOperatorDetails(newOperatorDetails);
+    
+        IDelegationManager.OperatorDetails memory operatorDetails = delegationManager.operatorDetails(operator);
+        assertEq(operatorDetails.stakerOptOutWindowBlocks, newOperatorDetails.stakerOptOutWindowBlocks);
+    }
+
+    function test_undelegate_SuccessfulUndelegateWhenCallerIsOperator() public {
+        address operator = address(this);
+        _registerOperatorWithBaseDetails(operator);
+    
+        address staker = cheats.addr(stakerPrivateKey);
+        _delegateToOperatorWhoAcceptsAllStakers(staker, operator);
+    
+        bytes32[] memory withdrawalRoots = delegationManager.undelegate(staker);
+    
+        assertEq(withdrawalRoots.length, 0);
+        assertEq(delegationManager.delegatedTo(staker), address(0));
+    }
+
+    function test_undelegate_SuccessfulUndelegateWhenStakerHasDelegatableShares() public {
+        address operator = address(this);
+        _registerOperatorWithBaseDetails(operator);
+    
+        address staker = cheats.addr(stakerPrivateKey);
+        uint256[] memory depositAmounts = new uint256[](1);
+        depositAmounts[0] = 1e18;
+        IStrategy[] memory strategies = _deployAndDepositIntoStrategies(staker, depositAmounts);
+        _delegateToOperatorWhoAcceptsAllStakers(staker, operator);
+    
+        cheats.prank(staker);
+        bytes32[] memory withdrawalRoots = delegationManager.undelegate(staker);
+    
+        assertEq(withdrawalRoots.length, 1);
+        assertEq(delegationManager.delegatedTo(staker), address(0));
+        assertEq(delegationManager.operatorShares(operator, strategies[0]), 0);
+        assertTrue(delegationManager.pendingWithdrawals(withdrawalRoots[0]));
+    }
+
+    function test_decreaseDelegatedShares_SuccessfulDecreaseDelegatedSharesWhenStakerIsNotDelegated() public {
+        vm.startPrank(address(strategyManagerMock));
+        delegationManager.decreaseDelegatedShares(address(this), IStrategy(address(0)), 0);
+        vm.stopPrank();
+    }
+
+    function test_completeQueuedWithdrawal_SuccessfulCompleteQueuedWithdrawalWhenCurrentOperatorIsNotSet() public {
+        address staker = address(this);
+        address withdrawer = address(this);
+        uint256 depositAmount = 1e18;
+        uint256 withdrawalAmount = 1e17;
+        (IDelegationManager.Withdrawal memory withdrawal, IERC20[] memory tokens, bytes32 withdrawalRoot) = _setUpCompleteQueuedWithdrawalSingleStrat(staker, withdrawer, depositAmount, withdrawalAmount);
+    
+        uint256 futureBlockNumber = withdrawal.startBlock + minWithdrawalDelayBlocks;
+        cheats.roll(futureBlockNumber);
+    
+        delegationManager.completeQueuedWithdrawal(withdrawal, tokens, 0, false);
+    
+        assertEq(tokens[0].balanceOf(withdrawer), 0);
+        assertEq(tokens[0].balanceOf(address(strategyMock)), depositAmount);
+        assertFalse(delegationManager.pendingWithdrawals(withdrawalRoot));
+    }
+
+    function test_getDelegatableShares_SuccessfulGetDelegatableSharesWhenStakerHasSharesInBothStrategyManagerAndEigenPodManager() public {
+        address staker = address(this);
+        uint256[] memory depositAmounts = new uint256[](1);
+        depositAmounts[0] = 1e18;
+        IStrategy[] memory strategies = _deployAndDepositIntoStrategies(staker, depositAmounts);
+    
+        int256 podShares = 1e18;
+        cheats.mockCall(
+            address(eigenPodManagerMock),
+            abi.encodeWithSelector(eigenPodManagerMock.podOwnerShares.selector, staker),
+            abi.encode(podShares)
+        );
+    
+        (IStrategy[] memory delegatableStrategies, uint256[] memory delegatableShares) = delegationManager.getDelegatableShares(staker);
+    
+        assertEq(delegatableStrategies.length, strategies.length + 1);
+        assertEq(delegatableShares.length, depositAmounts.length + 1);
+    
+        for (uint256 i = 0; i < strategies.length; i++) {
+            assertEq(address(delegatableStrategies[i]), address(strategies[i]));
+            assertEq(delegatableShares[i], depositAmounts[i]);
+        }
+    
+        assertEq(address(delegatableStrategies[strategies.length]), address(beaconChainETHStrategy));
+        assertEq(delegatableShares[strategies.length], uint256(podShares));
+    }
 }
