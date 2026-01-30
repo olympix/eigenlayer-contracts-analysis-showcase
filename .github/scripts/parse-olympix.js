@@ -1,16 +1,33 @@
 const fs = require('fs');
+const path = require('path');
 
 module.exports = async ({ github, context, core }) => {
+  // Find the Olympix output file (pattern: code_analysis_*.json)
+  let jsonFile;
+  try {
+    const files = fs.readdirSync('.');
+    jsonFile = files.find(f => f.startsWith('code_analysis_') && f.endsWith('.json'));
+    
+    if (!jsonFile) {
+      console.log('No Olympix output file found (code_analysis_*.json)');
+      return;
+    }
+    console.log(`Found output file: ${jsonFile}`);
+  } catch (e) {
+    console.log('Error reading directory:', e.message);
+    return;
+  }
+
   // Read the JSON output
   let files;
   try {
-    const raw = fs.readFileSync('olympix.json', 'utf8');
+    const raw = fs.readFileSync(jsonFile, 'utf8');
     files = JSON.parse(raw);
     if (!Array.isArray(files)) {
       files = files.results || files.files || [files];
     }
   } catch (e) {
-    console.log('No results file found or invalid JSON:', e.message);
+    console.log('Invalid JSON:', e.message);
     return;
   }
 
