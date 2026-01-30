@@ -1,5 +1,4 @@
 const fs = require('fs');
-const path = require('path');
 
 module.exports = async ({ github, context, core }) => {
   // Find the Olympix output file (pattern: code_analysis_*.json)
@@ -140,13 +139,14 @@ module.exports = async ({ github, context, core }) => {
 
   const hasHighSeverity = severityCounts.High > 0;
 
+  // Check run fails if high severity issues, workflow continues
   await github.rest.checks.create({
     owner: context.repo.owner,
     repo: context.repo.repo,
     name: 'Olympix Security Scan',
     head_sha: context.sha,
     status: 'completed',
-    conclusion: hasHighSeverity ? 'failure' : 'neutral',
+    conclusion: hasHighSeverity ? 'failure' : 'success',
     output: {
       title: `Found ${allIssues.length} issue(s): ${severityCounts.High} high, ${severityCounts.Medium} medium, ${severityCounts.Low} low`,
       summary: comment,
@@ -154,8 +154,8 @@ module.exports = async ({ github, context, core }) => {
     }
   });
 
-  // Fail the workflow if high severity issues found
+  // Log result but don't fail the workflow
   if (hasHighSeverity) {
-    core.setFailed(`Found ${severityCounts.High} high severity issues`);
+    console.log(`Found ${severityCounts.High} high severity issues - check run marked as failed`);
   }
 };
