@@ -70,5 +70,166 @@ contract OpixEigenTest is OlympixUnitTest("Eigen") {
         fuzzedOutAddresses[address(bEIGEN)] = true;
         fuzzedOutAddresses[address(0)] = true;
     }
-}
 
+    function test_initialize_FailWhenMintersAndMintingAllowancesHaveDifferentLengths() public {
+        address[] memory minters = new address[](1);
+        minters[0] = minter1;
+    
+        uint256[] memory mintingAllowances = new uint256[](2);
+        mintingAllowances[0] = 1 ether;
+        mintingAllowances[1] = 2 ether;
+    
+        uint256[] memory mintAllowedAfters = new uint256[](1);
+        mintAllowedAfters[0] = 0;
+    
+        vm.expectRevert("Eigen.initialize: minters and mintingAllowances must be the same length");
+        eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
+    }
+
+    function test_initialize_FailWhenMintersAndMintAllowedAftersHaveDifferentLengths() public {
+        address[] memory minters = new address[](1);
+        minters[0] = minter1;
+    
+        uint256[] memory mintingAllowances = new uint256[](1);
+        mintingAllowances[0] = 1 ether;
+    
+        uint256[] memory mintAllowedAfters = new uint256[](2);
+        mintAllowedAfters[0] = 0;
+        mintAllowedAfters[1] = 1;
+    
+        vm.expectRevert("Eigen.initialize: minters and mintAllowedAfters must be the same length");
+        eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
+    }
+
+    function test_setAllowedFrom_SuccessfulSetAllowedFrom() public {
+        address[] memory minters = new address[](1);
+        minters[0] = minter1;
+    
+        uint256[] memory mintingAllowances = new uint256[](1);
+        mintingAllowances[0] = 1 ether;
+    
+        uint256[] memory mintAllowedAfters = new uint256[](1);
+        mintAllowedAfters[0] = 0;
+    
+        eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
+    
+        vm.startPrank(minter1);
+    
+        eigen.setAllowedFrom(minter2, true);
+    
+        vm.stopPrank();
+    
+        assertEq(eigen.allowedFrom(minter2), true);
+    }
+
+    function test_setAllowedTo_SuccessfulSetAllowedTo() public {
+        address[] memory minters = new address[](1);
+        minters[0] = minter1;
+    
+        uint256[] memory mintingAllowances = new uint256[](1);
+        mintingAllowances[0] = 1 ether;
+    
+        uint256[] memory mintAllowedAfters = new uint256[](1);
+        mintAllowedAfters[0] = 0;
+    
+        eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
+    
+        vm.startPrank(minter1);
+    
+        eigen.setAllowedTo(minter2, true);
+    
+        vm.stopPrank();
+    
+        assertTrue(eigen.allowedTo(minter2));
+    }
+
+    function test_disableTransferRestrictions_SuccessfulDisable() public {
+        address[] memory minters = new address[](1);
+        minters[0] = minter1;
+    
+        uint256[] memory mintingAllowances = new uint256[](1);
+        mintingAllowances[0] = 1 ether;
+    
+        uint256[] memory mintAllowedAfters = new uint256[](1);
+        mintAllowedAfters[0] = 0;
+    
+        vm.startPrank(minter1);
+        eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
+        eigen.disableTransferRestrictions();
+        vm.stopPrank();
+    
+        assertEq(eigen.transferRestrictionsDisabledAfter(), 0);
+    }
+
+    function test_mint_FailWhenSenderHasNoMintingAllowance() public {
+        vm.startPrank(minter2);
+    
+        vm.expectRevert("Eigen.mint: msg.sender has no minting allowance");
+        eigen.mint();
+    
+        vm.stopPrank();
+    }
+
+    function test_mint_SuccessfulMint() public {
+        address[] memory minters = new address[](1);
+        minters[0] = minter1;
+    
+        uint256[] memory mintingAllowances = new uint256[](1);
+        mintingAllowances[0] = 1 ether;
+    
+        uint256[] memory mintAllowedAfters = new uint256[](1);
+        mintAllowedAfters[0] = 0;
+    
+        eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
+    
+        vm.startPrank(minter1);
+    
+        eigen.mint();
+    
+        vm.stopPrank();
+    
+        assertEq(eigen.balanceOf(minter1), 1 ether);
+    }
+
+    function test_multisend_FailWhenReceiversAndAmountsHaveDifferentLengths() public {
+        address[] memory receivers = new address[](1);
+        receivers[0] = minter2;
+    
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 1 ether;
+        amounts[1] = 1 ether;
+    
+        vm.startPrank(minter1);
+        vm.expectRevert("Eigen.multisend: receivers and amounts must be the same length");
+        eigen.multisend(receivers, amounts);
+        vm.stopPrank();
+    }
+
+    function test_beforeTokenTransfer_SuccessfulTransferWhenTransferRestrictionsAreDisabled() public {
+        address[] memory minters = new address[](1);
+        minters[0] = minter1;
+    
+        uint256[] memory mintingAllowances = new uint256[](1);
+        mintingAllowances[0] = 1 ether;
+    
+        uint256[] memory mintAllowedAfters = new uint256[](1);
+        mintAllowedAfters[0] = 0;
+    
+        eigen.initialize(minter1, minters, mintingAllowances, mintAllowedAfters);
+    
+        vm.startPrank(minter1);
+    
+        eigen.mint();
+        eigen.disableTransferRestrictions();
+        eigen.transfer(minter2, 1 ether);
+    
+        vm.stopPrank();
+    
+        assertEq(eigen.balanceOf(minter1), 0);
+        assertEq(eigen.balanceOf(minter2), 1 ether);
+    }
+
+    function test_CLOCK_MODE_SuccessfulReturnModeTimestamp() public {
+        assertEq(eigen.CLOCK_MODE(), "mode=timestamp");
+    }
+}
